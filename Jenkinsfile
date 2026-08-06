@@ -23,6 +23,17 @@ pipeline {
             }
         }
     }
+post {
+        always {
+            echo 'Pipeline completed.'
+        }
+        success {
+            echo 'Build succeeded.'
+        }
+        failure {
+            echo 'Build failed.'
+        }
+    }
 }
 
 
