@@ -26,6 +26,7 @@ pipeline {
 post {
         always {
             echo 'Pipeline completed.'
+            deleteDir()
         }
         success {
             echo 'Build succeeded.'
