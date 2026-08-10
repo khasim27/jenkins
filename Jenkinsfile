@@ -1,54 +1,34 @@
 pipeline {
     agent any
-
-    environment
-    {
-        COURSE= 'Jenkins'
+    
+    options {
+        timeout(time: 30, unit: 'MINUTES') 
+        disableConcurrentBuilds()
     }
 
     stages {
-
-        stage('Build') {
+        stage('Read package.json') {
             steps {
-              script{
-               sh  """
-               echo "Hi buuil"
-               env 
-               """
-               
-
-              }
+                script {
+                    def packageJson = readJSON file: 'package.json'
+                    appVersion = packageJson.version
+                    echo "Package version: ${appVersion}"
+                }
             }
         }
-
-        stage('Test') {
-            steps {
-               script{
-                 echo 'Test'
-              }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script{
-                 echo 'Deploy'
-              }
-            }
-        }
+     
     }
-post {
-        always {
-            echo 'Pipeline completed.'
+
+    post { 
+        always { 
+            echo 'I will always say Hello again!'
             deleteDir()
         }
-        success {
-            echo 'Build succeeded.'
+        success { 
+            echo 'Hello Success'
         }
-        failure {
-            echo 'Build failed.'
+        failure { 
+            echo 'Hello Failure'
         }
     }
 }
-
-
