@@ -1,7 +1,9 @@
 pipeline {
-    agent {
-        label 'agent-1'
-    }
+    agent any
+  # {
+        #label 'agent-1'
+
+   # }
     environment
     {
         COURSE= 'Jenkins'
