@@ -1,35 +1,5 @@
 pipeline {
     agent any
-<<<<<<< HEAD
-    
-    options {
-        timeout(time: 30, unit: 'MINUTES') 
-        disableConcurrentBuilds()
-    }
-
-    stages {
-        stage('Read package.json') {
-            steps {
-                script {
-                    def packageJson = readJSON file: 'package.json'
-                    appVersion = packageJson.version
-                    echo "Package version: ${appVersion}"
-                }
-            }
-        }
-     
-    }
-
-    post { 
-        always { 
-            echo 'I will always say Hello again!'
-            deleteDir()
-        }
-        success { 
-            echo 'Hello Success'
-        }
-        failure { 
-=======
 
     environment {
         appVersion = ''
@@ -91,7 +61,6 @@ pipeline {
         }
 
         failure {
->>>>>>> d0b6843 (add all files)
             echo 'Hello Failure'
         }
     }
