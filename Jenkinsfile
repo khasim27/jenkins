@@ -14,27 +14,39 @@ pipeline {
     }
 
     stages {
+stage('Check package.json') {
+    steps {
+        sh '''
+            echo "===== CURRENT DIRECTORY ====="
+            pwd
 
-        stage('Read package.json') {
-            steps {
-                script {
-                    def packageJson = readJSON file: 'package.json'
-                    def appVersion = packageJson.version.toString()
+            echo "===== FILES ====="
+            ls -la
 
-                    if (!appVersion || appVersion == 'null') {
-                        error("Invalid version in package.json")
-                    }
+            echo "===== package.json ====="
+            cat package.json
 
-                    echo "Package version: ${appVersion}"
+            echo "===== VERSION USING NODE ====="
+            node -p "require('./package.json').version"
+        '''
 
-                    // Store it in the current build
-                    currentBuild.description = "Version: ${appVersion}"
+        script {
+            def packageJson = readJSON file: 'package.json'
 
-                    // Save for later stages
-                    env.IMAGE_TAG = appVersion
-                }
+            echo "DEBUG packageJson: ${packageJson}"
+            echo "DEBUG version: ${packageJson.version}"
+
+            if (!packageJson.version) {
+                error("package.json does not contain a valid version")
             }
+
+            env.appVersion = packageJson.version
+
+            echo "Package version: ${env.appVersion}"
         }
+    }
+}
+    
 
         stage('Install Dependencies') {
             steps {
@@ -45,35 +57,21 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-
-                    if (!env.IMAGE_TAG) {
-                        error("IMAGE_TAG is empty. Cannot build Docker image.")
-                    }
-
-                    echo "Docker image tag: ${env.IMAGE_TAG}"
-
-                    def imageName = "${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.IMAGE_TAG}"
-
-                    echo "Docker image: ${imageName}"
-
                     withAWS(
                         credentials: 'aws-crds',
                         region: "${REGION}"
                     ) {
                         sh """
-                            set -e
-
                             aws ecr get-login-password --region ${REGION} | \
-                            docker login \
-                            --username AWS \
-                            --password-stdin \
+                            docker login --username AWS --password-stdin \
                             ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
 
                             docker build \
-                            -t ${imageName} \
+                            -t ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.appVersion} \
                             .
 
-                            docker push ${imageName}
+                            docker push \
+                            ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.appVersion}
                         """
                     }
                 }
@@ -82,6 +80,7 @@ pipeline {
     }
 
     post {
+
         always {
             echo 'I will always say Hello again!'
             deleteDir()
