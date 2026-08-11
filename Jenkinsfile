@@ -43,7 +43,7 @@ stage('Check package.json') {
 
             env.APP_VERSION = packageJson.version.toString()
 
-            echo "Package version: ${env.appVersion}"
+            echo "Package version: ${env.APP_VERSION}"
         }
     }
 }
