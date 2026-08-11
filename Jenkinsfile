@@ -1,5 +1,5 @@
 pipeline {
-    agent 
+    agent any
     environment { 
         appVersion = ''
         REGION = "us-east-1"
