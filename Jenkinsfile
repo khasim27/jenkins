@@ -41,7 +41,7 @@ stage('Check package.json') {
                 error("package.json does not contain a valid version")
             }
 
-            env.APP_VERSION = packageJson.version.toString()
+            env.APP_VERSION = packageJson.version
 
             echo "Package version: ${env.APP_VERSION}"
         }
