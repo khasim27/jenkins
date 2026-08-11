@@ -15,22 +15,39 @@ pipeline {
     }
 
     stages {
+stage('Check package.json') {
+    steps {
+        sh '''
+            echo "===== CURRENT DIRECTORY ====="
+            pwd
 
-        stage('Read package.json') {
-            steps {
-                script {
-                    def packageJson = readJSON file: 'package.json'
+            echo "===== FILES ====="
+            ls -la
 
-                    if (!packageJson.version) {
-                        error('package.json does not contain a valid version')
-                    }
+            echo "===== package.json ====="
+            cat package.json
 
-                    env.appVersion = packageJson.version
+            echo "===== VERSION USING NODE ====="
+            node -p "require('./package.json').version"
+        '''
 
-                    echo "Package version: ${env.appVersion}"
-                }
+        script {
+            def packageJson = readJSON file: 'package.json'
+
+            echo "DEBUG packageJson: ${packageJson}"
+            echo "DEBUG version: ${packageJson.version}"
+
+            if (!packageJson.version) {
+                error("package.json does not contain a valid version")
             }
+
+            env.appVersion = packageJson.version
+
+            echo "Package version: ${env.appVersion}"
         }
+    }
+}
+    
 
         stage('Install Dependencies') {
             steps {
