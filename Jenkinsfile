@@ -14,16 +14,21 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-    stages {
-        stage('Read package.json') {
-            steps {
-                script {
-                    def packageJson = readJSON file: 'package.json'
-                    env.appVersion = packageJson.version
-                    echo "Package version: ${env.appVersion}"
-                }
+   stage('Read package.json') {
+    steps {
+        script {
+            def packageJson = readJSON file: 'package.json'
+
+            if (!packageJson.version) {
+                error("package.json does not contain a valid version")
             }
+
+            env.appVersion = packageJson.version
+            echo "Package version: ${env.appVersion}"
         }
+    }
+}
+
 
         stage('Install Dependencies') {
             steps {
