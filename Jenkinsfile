@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        appVersion = ''
+        APP_VERSION =''
         REGION = 'us-east-1'
         ACC_ID = '677938781565'
         PROJECT = 'roboshop'
@@ -41,7 +41,7 @@ stage('Check package.json') {
                 error("package.json does not contain a valid version")
             }
 
-            env.appVersion = packageJson.version
+            env.APP_VERSION = packageJson.version.toString()
 
             echo "Package version: ${env.appVersion}"
         }
@@ -68,11 +68,11 @@ stage('Check package.json') {
                             ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
 
                             docker build \
-                            -t ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.appVersion} \
+                            -t ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.APP_VERSION} \
                             .
 
                             docker push \
-                            ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.appVersion}
+                            ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.APP_VERSION}
                         """
                     }
                 }
