@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        APP_VERSION =''
         REGION = 'us-east-1'
         ACC_ID = '677938781565'
         PROJECT = 'roboshop'
@@ -15,39 +14,27 @@ pipeline {
     }
 
     stages {
-stage('Check package.json') {
-    steps {
-        sh '''
-            echo "===== CURRENT DIRECTORY ====="
-            pwd
 
-            echo "===== FILES ====="
-            ls -la
+        stage('Read package.json') {
+            steps {
+                script {
+                    def packageJson = readJSON file: 'package.json'
+                    def appVersion = packageJson.version.toString()
 
-            echo "===== package.json ====="
-            cat package.json
+                    if (!appVersion || appVersion == 'null') {
+                        error("Invalid version in package.json")
+                    }
 
-            echo "===== VERSION USING NODE ====="
-            node -p "require('./package.json').version"
-        '''
+                    echo "Package version: ${appVersion}"
 
-        script {
-            def packageJson = readJSON file: 'package.json'
+                    // Store it in the current build
+                    currentBuild.description = "Version: ${appVersion}"
 
-            echo "DEBUG packageJson: ${packageJson}"
-            echo "DEBUG version: ${packageJson.version}"
-
-            if (!packageJson.version) {
-                error("package.json does not contain a valid version")
+                    // Save for later stages
+                    env.IMAGE_TAG = appVersion
+                }
             }
-
-            env.APP_VERSION = packageJson.version
-
-            echo "Package version: ${env.APP_VERSION}"
         }
-    }
-}
-    
 
         stage('Install Dependencies') {
             steps {
@@ -58,21 +45,35 @@ stage('Check package.json') {
         stage('Docker Build') {
             steps {
                 script {
+
+                    if (!env.IMAGE_TAG) {
+                        error("IMAGE_TAG is empty. Cannot build Docker image.")
+                    }
+
+                    echo "Docker image tag: ${env.IMAGE_TAG}"
+
+                    def imageName = "${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.IMAGE_TAG}"
+
+                    echo "Docker image: ${imageName}"
+
                     withAWS(
                         credentials: 'aws-crds',
                         region: "${REGION}"
                     ) {
                         sh """
+                            set -e
+
                             aws ecr get-login-password --region ${REGION} | \
-                            docker login --username AWS --password-stdin \
+                            docker login \
+                            --username AWS \
+                            --password-stdin \
                             ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
 
                             docker build \
-                            -t ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.APP_VERSION} \
+                            -t ${imageName} \
                             .
 
-                            docker push \
-                            ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}:${env.APP_VERSION}
+                            docker push ${imageName}
                         """
                     }
                 }
@@ -81,7 +82,6 @@ stage('Check package.json') {
     }
 
     post {
-
         always {
             echo 'I will always say Hello again!'
             deleteDir()
